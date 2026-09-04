@@ -8,42 +8,21 @@ Credentials from env (NOKIA_USER / NOKIA_PASS).
 """
 import base64
 import os
-import subprocess
-import urllib3
 
 import requests
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-urllib3.disable_warnings()
+from nokia_crypto import url_escape, sha256_crypt, aes_cbc_encrypt
+from nokia_http import create_session
 
 BASE = "https://192.168.18.1"
 USER = os.environ.get("NOKIA_USER", "admin")
 PASS = os.environ.get("NOKIA_PASS", "")
 
 
-def url_escape(s: str) -> str:
-    """JS base64url_escape: + -> -, / -> _, = -> . (char substitution)."""
-    return s.translate(str.maketrans("+/", "-_")).replace("=", ".")
-
-
-def sha256_crypt(password: str, salt: str) -> str:
-    """Linux SHA-256 crypt: openssl passwd -5 -salt <salt> <password>."""
-    out = subprocess.run(["openssl", "passwd", "-5", "-salt", salt, password],
-                         capture_output=True, text=True).stdout.strip()
-    # strip the "$5$salt$" prefix -> keep the trailing hash
-    return out
-
-
-def session():
-    s = requests.Session()
-    s.verify = False
-    s.headers["Content-Type"] = "application/x-www-form-urlencoded"
-    return s
-
-
 def login(s: requests.Session):
+    """Perform the authentication handshake and return the login response."""
     r = s.post(f"{BASE}/login_web_app.cgi?nonce", data=f"userName={USER}")
     j = r.json()
     nonce = j["nonce"]
@@ -71,10 +50,7 @@ def login(s: requests.Session):
           f"&enciv={url_escape(iv_b64)}"
           f"&nohash={he}&hPassword=undefined")
 
-    cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
-    enc = cipher.encryptor()
-    pad = 16 - (len(fe.encode()) % 16)
-    ct = enc.update(fe.encode() + bytes([pad]) * pad) + enc.finalize()
+    ct = aes_cbc_encrypt(key, iv, fe.encode())
 
     rsa_pt = f"{key_b64} {iv_b64}".encode()
     ck = pub.encrypt(rsa_pt, padding.PKCS1v15())
@@ -85,7 +61,7 @@ def login(s: requests.Session):
 
 
 if __name__ == "__main__":
-    s = session()
+    s = create_session()
     r = login(s)
     print("status:", r.status_code)
     print("body:", r.text[:400])

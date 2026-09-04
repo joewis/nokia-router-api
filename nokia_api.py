@@ -3,13 +3,18 @@
 Usage: python nokia_api.py [endpoint]
 Returns JSON from the router's authenticated data endpoints.
 """
-import base64, json, os, subprocess, sys, urllib3
+import base64
+import json
+import os
+import sys
+
 import requests
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-urllib3.disable_warnings()
+from nokia_crypto import url_escape, sha256_crypt, aes_cbc_encrypt
+from nokia_http import create_session, tolerant_json, extract_body_content
+
 BASE = "https://192.168.18.1"
 USER = os.environ.get("NOKIA_USER", "admin")
 PASS = os.environ.get("NOKIA_PASS", "")
@@ -23,22 +28,8 @@ ENDPOINTS = {
 }
 
 
-def url_escape(s):
-    return s.translate(str.maketrans("+/", "-_")).replace("=", ".")
-
-
-def sha256_crypt(password, salt):
-    return subprocess.run(["openssl", "passwd", "-5", "-salt", salt, password],
-                          capture_output=True, text=True).stdout.strip()
-
-
-def aes_cbc_encrypt(key, iv, data):
-    c = Cipher(algorithms.AES(key), modes.CBC(iv)).encryptor()
-    pad = 16 - (len(data) % 16)
-    return c.update(data + bytes([pad]) * pad) + c.finalize()
-
-
 def login(s):
+    """Perform authentication and return session credentials."""
     r = s.post(f"{BASE}/login_web_app.cgi?nonce", data=f"userName={USER}")
     j = r.json()
     pub = serialization.load_pem_public_key(j["pubkey"].encode())
@@ -57,27 +48,17 @@ def login(s):
 
 
 def get(endpoint, extra_query=""):
-    s = requests.Session()
-    s.verify = False
-    s.headers["Content-Type"] = "application/x-www-form-urlencoded"
+    """Make an authenticated GET/POST request to an endpoint."""
+    s = create_session()
     j = login(s)
     s.cookies.set("sid", j["sid"])
     url = f"{BASE}/{endpoint}{extra_query}"
     r = s.post(url, data=f"csrf_token={j['token']}", timeout=20)
-    body = r.content.split(b"\r\n\r\n", 1)[1] if b"\r\n\r\n" in r.content else r.content
+    body = extract_body_content(r)
     try:
         return json.loads(body)
     except Exception:
-        # router emits TR-069-style invalid JSON (leading commas after [ or {)
-        import re
-        txt = body.decode("utf-8", "replace")
-        txt = re.sub(r"\[\s*,", "[", txt)
-        txt = re.sub(r"\{\s*,", "{", txt)
-        txt = re.sub(r",\s*([}\]])", r"\1", txt)
-        try:
-            return json.loads(txt)
-        except Exception:
-            return body.decode("utf-8", "replace")
+        return tolerant_json(body)
 
 
 if __name__ == "__main__":
