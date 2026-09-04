@@ -57,8 +57,6 @@ python nokia_api.py status
 | `nokia_cell_status.py` | Cell status |
 | `nokia_clients.py` | Client table |
 | `nokia_full_dump.py` | All APs + clients + full WAN detail |
-| `nokia_pixel_monitor.py` | Poll a phone's signal metrics over time (RSSI, rates, AP) |
-| `nokia_pixel_wan.py` | WAN status for a phone |
 | `nokia_probe_logs.py` | Probe/diagnostic logs |
 
 ## How the handshake works
