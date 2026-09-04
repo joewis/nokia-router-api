@@ -1,33 +1,19 @@
 #!/home/carl/.winrm-venv/bin/python
 """Raw cell endpoint response."""
-import base64, os, subprocess, urllib3
+import base64
+import os
+
 import requests
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-urllib3.disable_warnings()
+from nokia_crypto import url_escape, sha256_crypt, aes_cbc_encrypt
+from nokia_http import create_session
+
 BASE = "https://192.168.18.1"
 USER, PASS = "admin", os.environ.get("NOKIA_PASS", "")
 
-
-def url_escape(s):
-    return s.translate(str.maketrans("+/", "-_")).replace("=", ".")
-
-
-def sha256_crypt(password, salt):
-    return subprocess.run(["openssl", "passwd", "-5", "-salt", salt, password],
-                          capture_output=True, text=True).stdout.strip()
-
-
-def aes_cbc_encrypt(key, iv, data):
-    c = Cipher(algorithms.AES(key), modes.CBC(iv)).encryptor()
-    pad = 16 - (len(data) % 16)
-    return c.update(data + bytes([pad]) * pad) + c.finalize()
-
-
-s = requests.Session(); s.verify = False
-s.headers["Content-Type"] = "application/x-www-form-urlencoded"
+s = create_session()
 r = s.post(f"{BASE}/login_web_app.cgi?nonce", data=f"userName={USER}")
 j = r.json()
 pub = serialization.load_pem_public_key(j["pubkey"].encode())
