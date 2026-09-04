@@ -1,5 +1,5 @@
 #!/home/carl/.winrm-venv/bin/python
-"""Pull cellular/WAN state + Pixel 10 wifi info from the Nokia 3121."""
+"""Pull cellular/WAN state from the Nokia 3121."""
 import base64
 import json
 import os
