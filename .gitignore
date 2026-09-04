@@ -1,3 +1,38 @@
-Nothing should be ignored in this case, as the modified files are all Python source code files (.py) which are not build artifacts, dependencies, or temporary files. The current .gitignore is empty and there are no files that need to be added to it based on the provided changes.
+```
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-Output: (nothing)
+# Dependencies
+.venv/
+venv/
+.env
+.env.local
+.env.*
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Logs
+*.log
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# Coverage
+.coverage
+coverage/
+htmlcov/
+
+# Testing
+.pytest_cache/
+.mypy_cache/
+```
