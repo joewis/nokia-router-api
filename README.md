@@ -120,6 +120,24 @@ names map to the actual CGI script names. **Read-only** endpoints are active;
 | `log_info` | `log_status_web_app.cgi?info` | Syslog config detail |
 | `log_vlog` | `log_status_web_app.cgi?vlog_glb` | **Full syslog buffer** (142KB) |
 
+### Diagnostic endpoints (active)
+
+These run network tests (ping, latency, DNS, throughput, packet loss). They
+are **read-only diagnostics** — they run a test and report results, they do not
+change configuration. Results are read back via `diag` / `troubleshoot_status`.
+
+| Friendly name | CGI endpoint | Action |
+|---|---|---|
+| `diag_ping` | `diag_web_app.cgi?ping` | Run a ping test (returns a `pid`) |
+| `diag_cancel` | `diag_web_app.cgi?cancel` | Cancel a running diagnostic |
+| `troubleshoot_ping` | `troubleshooting_web_app.cgi?ping` | Run a ping test |
+| `troubleshoot_latency` | `troubleshooting_web_app.cgi?latencytest` | Run a latency test |
+| `troubleshoot_dns` | `troubleshooting_web_app.cgi?dnsrestest` | Run a DNS resolution test |
+| `troubleshoot_us_throughput` | `troubleshooting_web_app.cgi?usthroughputtest` | Run an upstream throughput test |
+| `troubleshoot_ds_throughput` | `troubleshooting_web_app.cgi?dsthroughputtest` | Run a downstream throughput test |
+| `troubleshoot_us_packetloss` | `troubleshooting_web_app.cgi?uspacketloss` | Run an upstream packet-loss test |
+| `troubleshoot_ds_packetloss` | `troubleshooting_web_app.cgi?dspacketloss` | Run a downstream packet-loss test |
+
 ### Disabled / destructive endpoints (commented out)
 
 These are **state-changing or destructive** and are intentionally **disabled**
@@ -135,12 +153,6 @@ router.
 | `upgrade` | `upgrade_web_app.cgi` | **Firmware upgrade** |
 | `command_cat` | `command_web_app.cgi?cat` | Shell file-read (dead on this firmware) |
 | `command_pexist` | `command_web_app.cgi?pexist` | Shell command-exists (dead) |
-| `diag_ping` / `diag_cancel` | `diag_web_app.cgi?ping` / `?cancel` | Runs/cancels diagnostics |
-| `troubleshoot_ping` | `troubleshooting_web_app.cgi?ping` | Runs ping |
-| `troubleshoot_latency` | `troubleshooting_web_app.cgi?latencytest` | Runs latency test |
-| `troubleshoot_dns` | `troubleshooting_web_app.cgi?dnsrestest` | Runs DNS test |
-| `troubleshoot_us/ds_throughput` | `troubleshooting_web_app.cgi?usthroughputtest` / `?dsthroughputtest` | Runs throughput test |
-| `troubleshoot_us/ds_packetloss` | `troubleshooting_web_app.cgi?uspacketloss` / `?dspacketloss` | Runs packet-loss test |
 | `troubleshoot_port_mirror` | `troubleshooting_web_app.cgi?v=port_mirror` | Enables port mirror |
 | `troubleshoot_del_port_mirror` | `troubleshooting_web_app.cgi?v=del_portmirror` | Disables port mirror |
 | `password_set` | `password_web_app.cgi?set` | **Changes admin password** |
