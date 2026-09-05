@@ -164,7 +164,7 @@ direction=<rx|tx>&domain=<dns>&ipaddress=<target>&lan_port=<port>
 &waninterfacename=<ifname>
 ```
 
-On ISP-managed gateways (e.g. Singtel) the TR-143 server is **not exposed**, so
+On ISP-managed gateways (e.g. Starhub) the TR-143 server is **not exposed**, so
 calling the throughput test with an arbitrary target (e.g. `8.8.8.8`) causes the
 router to **drop the connection** (`RemoteDisconnected`) rather than run the
 test. The throughput test is therefore only usable when a TR-143 server is
