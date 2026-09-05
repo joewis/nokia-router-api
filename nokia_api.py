@@ -47,6 +47,7 @@ ENDPOINTS = {
     "routerinfo": "main_web_app.cgi",
     "status": "dashboard_status_web_app.cgi",
     "troubleshoot": "troubleshooting_web_app.cgi",
+    "troubleshoot_status": "troubleshooting_status_web_app.cgi",
     "capabilities": "capabilities_status_web_app.cgi",
     "network_topology": "dashboard_ntwtopo_status_web_app.cgi",
     "home_network": "device_home_network_status_web_app.cgi",
