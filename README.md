@@ -185,6 +185,45 @@ The request format (from the de-minified JS bundle, chunk 733):
 - `pexist` uses `POST_CSRF` (body `csrf_token=<token>`)
 - `cat` uses `POST_CSRF_TEXT` (body `csrf_token=<token>`, text response)
 
+### Ping diagnostic (working end-to-end)
+
+The ping diagnostic needs a **target address** (`ipaddr`) and a **source
+interface** (`iface`) — without them the ping process exits immediately. The
+full payload (from the de-minified JS, chunk 733):
+
+```
+ipversion=<ipv4|ipv6>&iface=<iface>&ipaddr=<target>&checkall=ping
+&pingcount=<n>&packetlength=<n>&tracehops=<n>
+```
+
+The `iface` value is built from the WAN connection: `ip,<iid/10000>,<iid%10000/100>,<oid>`
+(e.g. `ip,1,1,1` for the primary WAN). Get it from `diag_status_web_app.cgi` →
+`if_conns_glb`.
+
+**Working example** (ping 8.8.8.8, 5 packets):
+
+```bash
+# 1. Start the ping — returns a pid
+POST diag_web_app.cgi?ping
+  body: csrf_token=<token>&ipversion=ipv4&iface=ip,1,1,1&ipaddr=8.8.8.8
+        &checkall=ping&pingcount=5&packetlength=64&tracehops=1
+  → {"result":0, "pid":23369}
+
+# 2. Poll until done
+POST command_web_app.cgi?pexist+23369   → {"exist":1}  (running)
+POST command_web_app.cgi?pexist+23369   → {"exist":0}  (finished)
+
+# 3. Read the streamed output
+POST command_web_app.cgi?cat+23369.cmd
+  → ">Please wait! Ping is in progress..."
+  → ">round-trip min/avg/max = 1.484/3.006/5.665 ms"
+```
+
+**Verified live:** with `ipaddr=8.8.8.8&iface=ip,1,1,1`, the ping ran for
+~15s (pexist stayed `1`), and `cat` streamed the output, ending with
+`>round-trip min/avg/max = 1.484/3.006/5.665 ms`. Without `ipaddr`, the ping
+exits immediately (`pexist=0` at t=0) — confirming the target is required.
+
 ### Disabled / destructive endpoints (commented out)
 
 These are **state-changing or destructive** and are intentionally **disabled**
