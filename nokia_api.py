@@ -104,6 +104,7 @@ ENDPOINTS = {
     "log": "log_status_web_app.cgi",
     "log_info": "log_status_web_app.cgi?info",
     "log_vlog": "log_status_web_app.cgi?vlog_glb",
+    "log_set": "log_web_app.cgi?set_log_glb",
 
     # --- Destructive / state-changing endpoints (DO NOT enable without explicit need) ---
     # "reboot": "reboot_web_app.cgi",
@@ -152,7 +153,6 @@ ENDPOINTS = {
     # "ipfilter_del": "ipfilter_web_app.cgi?v_glb=delip",
     # "parental_control_set": "parental_ctrl_web_app.cgi",
     # "ledctrl_set": "ledctrl_web_app.cgi?SetLedGlb",
-    # "log_set": "log_web_app.cgi?set_log_glb",
     # "domain_route_add": "domain_route_web_app.cgi?add_domainRouteData",
     # "domain_route_del": "domain_route_web_app.cgi?act=del",
     # "domain_route_enable": "domain_route_web_app.cgi?enable",
@@ -280,6 +280,53 @@ def get(endpoint: str, extra_query: str = "") -> dict:
     body_bytes = extract_body_content(response)
     
     # Parse JSON response, falling back to tolerant parser for malformed JSON
+    try:
+        return json.loads(body_bytes)
+    except json.JSONDecodeError:
+        return tolerant_json_decode(body_bytes)
+
+
+# Valid log levels for set_log_level (from the router's JS: chunk 733)
+LOG_LEVELS = {
+    "Emergency": 0, "Alert": 1, "Critical": 2, "Error": 3,
+    "Warning": 4, "Notice": 5, "Informational": 6, "Debug": 7,
+}
+
+
+def set_log_level(level: str, display_level: str = "Debug") -> dict:
+    """
+    Set the router's syslog capture and display levels.
+
+    The payload format was reverse-engineered from the router's JS bundle
+    (chunk 733): `logLevel=<numeric 0-7>&logDispLevel=<string>`.
+
+    Args:
+        level: Capture level name ("Emergency".."Debug"). Maps to
+            ct_syslog_cfg.Level (0-7). "Debug" (7) captures the most detail.
+        display_level: Display level string ("Error", "Debug", etc.). Maps to
+            syslog_cfg.LocalDisplayLevel.
+
+    Returns:
+        Parsed JSON response (e.g. {"result":0, "reason":0}).
+    """
+    if level not in LOG_LEVELS:
+        raise ValueError(f"Invalid log level '{level}'. Valid: {list(LOG_LEVELS)}")
+
+    session = create_session()
+    auth_data = login(session)
+    session.cookies.set("sid", auth_data["sid"])
+
+    payload = (
+        f"csrf_token={auth_data['token']}"
+        f"&logLevel={LOG_LEVELS[level]}"
+        f"&logDispLevel={display_level}"
+    )
+    response = session.post(
+        f"{BASE}/log_web_app.cgi?set_log_glb",
+        data=payload,
+        timeout=20,
+    )
+    body_bytes = extract_body_content(response)
     try:
         return json.loads(body_bytes)
     except json.JSONDecodeError:

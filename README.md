@@ -39,6 +39,19 @@ status  = N.get("status")        # dashboard status
 `N.get()` returns a parsed dict with tolerant JSON handling (the router emits
 TR-069-style invalid JSON — leading commas — which is cleaned before parsing).
 
+To raise the syslog capture level for diagnostics (e.g. to capture more detail
+around disconnect events):
+
+```python
+import nokia_api as N
+N.set_log_level("Debug", "Debug")   # capture level 7 (most detail)
+```
+
+Valid capture levels: `Emergency`(0), `Alert`(1), `Critical`(2), `Error`(3),
+`Warning`(4), `Notice`(5), `Informational`(6), `Debug`(7). The payload format
+(`logLevel=<0-7>&logDispLevel=<string>`) was reverse-engineered from the
+router's JS bundle (chunk 733).
+
 ### CLI
 
 ```bash
@@ -119,6 +132,7 @@ names map to the actual CGI script names. **Read-only** endpoints are active;
 | `log` | `log_status_web_app.cgi` | Syslog config |
 | `log_info` | `log_status_web_app.cgi?info` | Syslog config detail |
 | `log_vlog` | `log_status_web_app.cgi?vlog_glb` | **Full syslog buffer** (142KB) |
+| `log_set` | `log_web_app.cgi?set_log_glb` | Set syslog capture/display level |
 
 ### Diagnostic endpoints (active)
 
