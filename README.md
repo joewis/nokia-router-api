@@ -152,6 +152,24 @@ change configuration. Results are read back via `diag` / `troubleshoot_status`.
 | `troubleshoot_us_packetloss` | `troubleshooting_web_app.cgi?uspacketloss` | Run an upstream packet-loss test |
 | `troubleshoot_ds_packetloss` | `troubleshooting_web_app.cgi?dspacketloss` | Run a downstream packet-loss test |
 
+**Throughput test caveat:** the throughput tests (`usthroughputtest` /
+`dsthroughputtest`) are a **two-step flow** that requires a **TR-143 speedtest
+server URL** to be configured. The de-minified JS (chunk 848) shows the UI
+builds the payload via `troubleshooting_web_app.cgi?ping_ip` first, then reads
+the result via `usthroughputtest`/`dsthroughputtest`. The payload is:
+
+```
+direction=<rx|tx>&domain=<dns>&ipaddress=<target>&lan_port=<port>
+&portstatus=<status>&status=enable&wan_port=WAN&wan_conlist=<oid>
+&waninterfacename=<ifname>
+```
+
+On ISP-managed gateways (e.g. Singtel) the TR-143 server is **not exposed**, so
+calling the throughput test with an arbitrary target (e.g. `8.8.8.8`) causes the
+router to **drop the connection** (`RemoteDisconnected`) rather than run the
+test. The throughput test is therefore only usable when a TR-143 server is
+reachable/configured.
+
 ### Process status / readout endpoint (`command_web_app.cgi`)
 
 `command_web_app.cgi` is **not** a shell backdoor and **not** dead code. It is a
