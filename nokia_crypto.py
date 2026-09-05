@@ -16,26 +16,24 @@ from typing import Union
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
 
-def url_safe_base64_encode(data: bytes) -> str:
+def url_safe_base64_encode(data: str) -> str:
     """
-    Encodes binary data to a URL-safe Base64 string matching the JS implementation.
-    
-    Standard Base64 uses '+' and '/' which have special meanings in URLs.
-    This function replaces them with '-' and '_' respectively, and replaces
-    padding '=' characters with '.', as expected by the Nokia API.
-    
-    This matches the JavaScript base64url_escape function behavior.
-    
+    Applies the JS base64url_escape character substitution to a base64 string.
+
+    This is a PURE character substitution, NOT a base64 round-trip: it maps
+    '+' -> '-', '/' -> '_', and '=' -> '.' on an already-encoded base64 string.
+    The router expects this exact transformation (matching the JavaScript
+    base64url_escape function). Do NOT base64-encode here — the input must
+    already be a base64 string.
+
     Args:
-        data: The raw bytes to encode.
-        
+        data: An already-base64-encoded string to apply the substitution to.
+
     Returns:
-        A URL-safe Base64 encoded string with '.' instead of '=' padding.
+        The URL-safe base64 string with '.' instead of '=' padding.
     """
-    # First encode to standard Base64
-    encoded = base64.b64encode(data).decode('utf-8')
-    # Apply JS-style URL escaping: + -> -, / -> _, = -> .
-    return encoded.translate(str.maketrans("+/", "-_")).replace("=", ".")
+    return data.translate(str.maketrans("+/", "-_")).replace("=", ".")
+
 
 
 def sha256_crypt(password: str, salt: str) -> str:

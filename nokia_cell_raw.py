@@ -69,9 +69,9 @@ def perform_login(session: requests.Session) -> dict:
         f"userhash={USER}&"
         f"RandomKeyhash={random_key}&"
         f"response={password_encoded}&"
-        f"nonce={url_safe_base64_encode(nonce.encode())}&"
-        f"enckey={url_safe_base64_encode(aes_key_b64.encode())}&"
-        f"enciv={url_safe_base64_encode(aes_iv_b64.encode())}&"
+        f"nonce={url_safe_base64_encode(nonce)}&"
+        f"enckey={url_safe_base64_encode(aes_key_b64)}&"
+        f"enciv={url_safe_base64_encode(aes_iv_b64)}&"
         f"nohash=1&"
         f"hPassword=undefined"
     )
@@ -86,8 +86,8 @@ def perform_login(session: requests.Session) -> dict:
     # Submit login request
     login_body = (
         "encrypted=1&"
-        f"ct={url_safe_base64_encode(base64.b64encode(encrypted_credentials).decode().encode())}&"
-        f"ck={url_safe_base64_encode(base64.b64encode(encrypted_key_iv).decode().encode())}"
+        f"ct={url_safe_base64_encode(base64.b64encode(encrypted_credentials).decode())}&"
+        f"ck={url_safe_base64_encode(base64.b64encode(encrypted_key_iv).decode())}"
     )
     
     login_response = session.post(f"{BASE}/login_web_app.cgi", data=login_body)

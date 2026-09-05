@@ -25,12 +25,12 @@ def main():
     key, iv = os.urandom(16), os.urandom(16)
     key_b64, iv_b64 = base64.b64encode(key).decode(), base64.b64encode(iv).decode()
     fe = (f"userhash={USER}&RandomKeyhash={j['randomKey']}&response={ue}"
-          f"&nonce={url_safe_base64_encode(j['nonce'].encode())}&enckey={url_safe_base64_encode(key_b64.encode())}"
-          f"&enciv={url_safe_base64_encode(iv_b64.encode())}&nohash=1&hPassword=undefined")
+          f"&nonce={url_safe_base64_encode(j['nonce'])}&enckey={url_safe_base64_encode(key_b64)}"
+          f"&enciv={url_safe_base64_encode(iv_b64)}&nohash=1&hPassword=undefined")
     ct = aes_cbc_encrypt(key, iv, fe.encode())
     ck = pub.encrypt(f"{key_b64} {iv_b64}".encode(), padding.PKCS1v15())
-    body = ("encrypted=1&ct=" + url_safe_base64_encode(base64.b64encode(ct).decode().encode())
-            + "&ck=" + url_safe_base64_encode(base64.b64encode(ck).decode().encode()))
+    body = ("encrypted=1&ct=" + url_safe_base64_encode(base64.b64encode(ct).decode())
+            + "&ck=" + url_safe_base64_encode(base64.b64encode(ck).decode()))
     token = s.post(f"{BASE}/login_web_app.cgi", data=body).json()["token"]
 
     # probe log-ish endpoints

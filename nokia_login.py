@@ -91,9 +91,9 @@ def login(session: requests.Session) -> requests.Response:
         f"userhash={user_hash}&"
         f"RandomKeyhash={random_key_hash}&"
         f"response={password_encoded}&"
-        f"nonce={url_safe_base64_encode(nonce.encode())}&"
-        f"enckey={url_safe_base64_encode(aes_key_b64.encode())}&"
-        f"enciv={url_safe_base64_encode(aes_iv_b64.encode())}&"
+        f"nonce={url_safe_base64_encode(nonce)}&"
+        f"enckey={url_safe_base64_encode(aes_key_b64)}&"
+        f"enciv={url_safe_base64_encode(aes_iv_b64)}&"
         f"nohash={no_hash_flag}&"
         f"hPassword=undefined"
     )
@@ -108,8 +108,8 @@ def login(session: requests.Session) -> requests.Response:
     # Step 7: Build final POST body with encrypted data
     post_body = (
         "encrypted=1&"
-        f"ct={url_safe_base64_encode(base64.b64encode(encrypted_credentials).decode().encode())}&"
-        f"ck={url_safe_base64_encode(base64.b64encode(encrypted_key_iv).decode().encode())}"
+        f"ct={url_safe_base64_encode(base64.b64encode(encrypted_credentials).decode())}&"
+        f"ck={url_safe_base64_encode(base64.b64encode(encrypted_key_iv).decode())}"
     )
     
     return session.post(f"{BASE}/login_web_app.cgi", data=post_body)
