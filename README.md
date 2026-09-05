@@ -82,6 +82,7 @@ names map to the actual CGI script names. **Read-only** endpoints are active;
 | `clients` | `device_home_nw_client_status_web_app.cgi` | Full AP/client table (76KB) |
 | `devices` | `dashboard_device_status_web_app.cgi` | Known devices / ARP table |
 | `routerinfo` | `main_web_app.cgi` | Router info (model, serial, version) |
+| `device_info` | `device_status_web_app.cgi?getroot` | Device metadata (chipset, HW/SW version, uptime) |
 | `status` | `dashboard_status_web_app.cgi` | Dashboard status |
 | `troubleshoot_status` | `troubleshooting_status_web_app.cgi` | WAN conns, uptime, DNS |
 | `capabilities` | `capabilities_status_web_app.cgi` | **`authorizedcgi` whitelist** + UI visibility |
@@ -163,7 +164,6 @@ router.
 | `domain_route_add/del/enable` | `domain_route_web_app.cgi?add_domainRouteData` / `?act=del` / `?enable` | DNS route changes |
 | `lan_add_client_alias` / `del` / `del_dom` | `lan_status_web_app.cgi?add_client_alias` / `?del` / `?delDom` | LAN client changes |
 | `wan_config_b` | `wan_config_glb_b_web_app.cgi?config` | WAN config changes |
-| `device_status_rootalias` / `getroot` | `device_status_web_app.cgi?rootalias` / `?getroot` | Device root access |
 | `beacon_mode_set` | `whw_beacon_mode_app_web_app.cgi` | Beacon mode changes |
 
 ## How the handshake works

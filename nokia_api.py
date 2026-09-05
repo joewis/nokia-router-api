@@ -45,6 +45,7 @@ ENDPOINTS = {
     "clients": "device_home_nw_client_status_web_app.cgi",
     "devices": "dashboard_device_status_web_app.cgi",
     "routerinfo": "main_web_app.cgi",
+    "device_info": "device_status_web_app.cgi?getroot",
     "status": "dashboard_status_web_app.cgi",
     "troubleshoot": "troubleshooting_web_app.cgi",
     "troubleshoot_status": "troubleshooting_status_web_app.cgi",
@@ -159,8 +160,6 @@ ENDPOINTS = {
     # "lan_del": "lan_status_web_app.cgi?del",
     # "lan_del_dom": "lan_status_web_app.cgi?delDom",
     # "wan_config_b": "wan_config_glb_b_web_app.cgi?config",
-    # "device_status_rootalias": "device_status_web_app.cgi?rootalias",
-    # "device_status_getroot": "device_status_web_app.cgi?getroot",
     # "beacon_mode_set": "whw_beacon_mode_app_web_app.cgi",
 }
 
