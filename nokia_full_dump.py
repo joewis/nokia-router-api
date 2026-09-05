@@ -7,8 +7,9 @@ This script retrieves comprehensive information about:
 - WAN connection details including IP addresses, gateways, and DNS
 - Additional router status counters and metrics
 """
+import os
 import sys
-sys.path.insert(0, "/home/carl/nokia-router")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import nokia_api as N
 
 

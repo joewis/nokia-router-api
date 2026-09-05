@@ -7,7 +7,7 @@ import requests
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization
 
-from nokia_crypto import url_escape, sha256_crypt, aes_cbc_encrypt
+from nokia_crypto import url_safe_base64_encode, sha256_crypt, aes_cbc_encrypt
 from nokia_http import create_session, extract_body_content
 
 BASE = "https://192.168.18.1"
@@ -22,12 +22,12 @@ ue = requests.utils.quote(p_hashed, safe="")
 key, iv = os.urandom(16), os.urandom(16)
 key_b64, iv_b64 = base64.b64encode(key).decode(), base64.b64encode(iv).decode()
 fe = (f"userhash={USER}&RandomKeyhash={j['randomKey']}&response={ue}"
-      f"&nonce={url_escape(j['nonce'])}&enckey={url_escape(key_b64)}"
-      f"&enciv={url_escape(iv_b64)}&nohash=1&hPassword=undefined")
+      f"&nonce={url_safe_base64_encode(j['nonce'].encode())}&enckey={url_safe_base64_encode(key_b64.encode())}"
+      f"&enciv={url_safe_base64_encode(iv_b64.encode())}&nohash=1&hPassword=undefined")
 ct = aes_cbc_encrypt(key, iv, fe.encode())
 ck = pub.encrypt(f"{key_b64} {iv_b64}".encode(), padding.PKCS1v15())
-body = ("encrypted=1&ct=" + url_escape(base64.b64encode(ct).decode())
-        + "&ck=" + url_escape(base64.b64encode(ck).decode()))
+body = ("encrypted=1&ct=" + url_safe_base64_encode(base64.b64encode(ct).decode().encode())
+        + "&ck=" + url_safe_base64_encode(base64.b64encode(ck).decode().encode()))
 token = s.post(f"{BASE}/login_web_app.cgi", data=body).json()["token"]
 
 # probe log-ish endpoints
