@@ -186,7 +186,6 @@ router.
 | `ipfilter_set` / `add` / `del` | `ipfilter_web_app.cgi?v_glb=set` / `?add_glb` / `?v_glb=delip` | IP filter changes |
 | `parental_control_set` | `parental_ctrl_web_app.cgi` | Parental control changes |
 | `ledctrl_set` | `ledctrl_web_app.cgi?SetLedGlb` | LED changes |
-| `log_set` | `log_web_app.cgi?set_log_glb` | Log config changes |
 | `domain_route_add/del/enable` | `domain_route_web_app.cgi?add_domainRouteData` / `?act=del` / `?enable` | DNS route changes |
 | `lan_add_client_alias` / `del` / `del_dom` | `lan_status_web_app.cgi?add_client_alias` / `?del` / `?delDom` | LAN client changes |
 | `wan_config_b` | `wan_config_glb_b_web_app.cgi?config` | WAN config changes |
