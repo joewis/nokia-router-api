@@ -1,10 +1,10 @@
 #!/home/carl/.winrm-venv/bin/python
 """
-Retrieve Pixel 10 WiFi details and WAN IP information from the Nokia 3121 router.
+Retrieve WiFi client details and WAN IP information from the Nokia 3121 router.
 
 This script fetches two types of data:
 1. Live client radio/signal details (band, channel, SSID, RSSI, rate) for all
-   connected clients, with focus on the Pixel 10.
+   connected clients.
 2. WAN IP connection details (status, IP, uptime, gateway, DNS) for the
    double-NAT check.
 

@@ -1,13 +1,15 @@
 #!/home/carl/.winrm-venv/bin/python
 """
-Poll Pixel 10 signal metrics from the Nokia 3121 router over time.
+Poll a device's signal metrics from the Nokia 3121 router over time.
 
 Samples every INTERVAL seconds for DURATION, logging RSSI, tx/rx rates,
-seconds-since-seen, association state and AP. Detects gaps (phone unseen),
+seconds-since-seen, association state and AP. Detects gaps (device unseen),
 RSSI dips and AP switches.
 
-Usage: python nokia_pixel_monitor.py [phone_mac]
-  phone_mac: MAC address to monitor (default: b0-d5-fb-cd-58-a9)
+Usage: python nokia_pixel_monitor.py <device_mac> [interval] [duration]
+  device_mac: MAC address of the device to monitor (required)
+  interval:   seconds between samples (default: 5)
+  duration:   total seconds to run (default: 300)
 """
 import os
 import sys
@@ -18,18 +20,22 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from nokia_api import get, ENDPOINTS
 
-PHONE = sys.argv[1] if len(sys.argv) > 1 else "b0-d5-fb-cd-58-a9"
-INTERVAL = 5   # seconds between samples
-DURATION = 300 # total seconds (5 min)
+if len(sys.argv) < 2:
+    print(__doc__)
+    sys.exit(1)
+
+DEVICE_MAC = sys.argv[1].lower()
+INTERVAL = int(sys.argv[2]) if len(sys.argv) > 2 else 5
+DURATION = int(sys.argv[3]) if len(sys.argv) > 3 else 300
 MAX_SAMPLES = DURATION // INTERVAL
 
 
 def sample():
     """
-    Return phone metrics dict, or None if unseen.
+    Return device metrics dict, or None if unseen.
 
     Returns:
-        dict: Phone signal metrics, or None if the phone is not in the table.
+        dict: Device signal metrics, or None if the device is not in the table.
     """
     try:
         client_data = get(ENDPOINTS["clients"])
@@ -44,7 +50,7 @@ def sample():
                         for client_entry in ssid_config.get("clients", []):
                             if isinstance(client_entry, dict):
                                 for mac_address, client_info in client_entry.items():
-                                    if mac_address.lower() == PHONE:
+                                    if mac_address.lower() == DEVICE_MAC:
                                         sensing = client_info.get("sensing-data", {})
                                         return {
                                             "ap_ip": ap_info.get("ip-address"),
@@ -63,8 +69,8 @@ def sample():
 
 
 def main():
-    """Main entry point: poll the phone and print a summary."""
-    print(f"Polling {PHONE} every {INTERVAL}s for {DURATION}s...", flush=True)
+    """Main entry point: poll the device and print a summary."""
+    print(f"Polling {DEVICE_MAC} every {INTERVAL}s for {DURATION}s...", flush=True)
     start_time = time.time()
     rows = []
     for _ in range(MAX_SAMPLES):
@@ -94,7 +100,7 @@ def main():
         aps = set((r[1].get("ap_ip"), r[1].get("bssid")) for r in seen if r[1].get("ap_ip"))
         print(f"APs seen: {aps}", flush=True)
         stale = [r for r in seen if r[1].get("seen_s") and r[1]["seen_s"] > 1]
-        print(f"samples where phone stale (>1s since seen): {len(stale)}", flush=True)
+        print(f"samples where device stale (>1s since seen): {len(stale)}", flush=True)
         if stale:
             for elapsed, metrics in stale[:10]:
                 print(f"  [{elapsed:.0f}s] seen_s={metrics.get('seen_s')} "
