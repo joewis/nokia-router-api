@@ -5,6 +5,10 @@ login is an obfuscated JS crypto handshake (nonce + salt + SHA-256 crypt +
 AES-CBC + RSA), so plain form-login fails. This repo replicates the handshake
 in Python to get an authenticated session, then queries the data endpoints.
 
+The full CGI surface was discovered by pulling the router's own Angular JS
+bundle (`/web_whw/main.*.js`) and the `capabilities_status_web_app.cgi` →
+`authorizedcgi` whitelist — **no guessing, no brute-force**.
+
 ## Requirements
 
 - Python 3 with `requests` + `cryptography`
@@ -42,6 +46,8 @@ python nokia_api.py clients
 python nokia_api.py devices
 python nokia_api.py routerinfo
 python nokia_api.py status
+python nokia_api.py capabilities   # the authorizedcgi whitelist
+python nokia_api.py log_vlog       # full syslog buffer
 ```
 
 > Note: the CLI truncates output at 4000 chars. For full data, import the
@@ -51,13 +57,114 @@ python nokia_api.py status
 
 | Script | Purpose |
 |---|---|
-| `nokia_api.py` | Library + CLI (login handshake inside) |
+| `nokia_api.py` | Library + CLI (login handshake inside, `ENDPOINTS` map) |
+| `nokia_http.py` | Session creation, tolerant JSON decode, body extraction |
+| `nokia_crypto.py` | `url_safe_base64_encode`, `sha256_crypt`, `aes_cbc_encrypt` |
 | `nokia_login.py` | The handshake replication (nonce → salt → crypt → AES/RSA) |
+| `nokia_clients.py` | Known-devices + live-client table |
+| `nokia_full_dump.py` | All APs + clients + full WAN detail |
 | `nokia_cell_raw.py` | Raw cell endpoint response |
 | `nokia_cell_status.py` | Cell status |
-| `nokia_clients.py` | Client table |
-| `nokia_full_dump.py` | All APs + clients + full WAN detail |
-| `nokia_probe_logs.py` | Probe/diagnostic logs |
+| `nokia_probe_logs.py` | Probe/diagnostic log endpoints |
+| `nokia_pixel_wan.py` | Client radio/signal details + WAN double-NAT check |
+| `nokia_pixel_monitor.py` | Poll any device's signal metrics over time |
+
+## Endpoints
+
+All endpoints are exposed via the `ENDPOINTS` dict in `nokia_api.py`. Friendly
+names map to the actual CGI script names. **Read-only** endpoints are active;
+**destructive / state-changing** endpoints are present but commented out.
+
+### Read-only endpoints (active)
+
+| Friendly name | CGI endpoint | Returns |
+|---|---|---|
+| `clients` | `device_home_nw_client_status_web_app.cgi` | Full AP/client table (76KB) |
+| `devices` | `dashboard_device_status_web_app.cgi` | Known devices / ARP table |
+| `routerinfo` | `main_web_app.cgi` | Router info (model, serial, version) |
+| `status` | `dashboard_status_web_app.cgi` | Dashboard status |
+| `troubleshoot_status` | `troubleshooting_status_web_app.cgi` | WAN conns, uptime, DNS |
+| `capabilities` | `capabilities_status_web_app.cgi` | **`authorizedcgi` whitelist** + UI visibility |
+| `network_topology` | `dashboard_ntwtopo_status_web_app.cgi` | Network topology |
+| `home_network` | `device_home_network_status_web_app.cgi` | Home network APs |
+| `check_expire` | `check_expire_web_app.cgi` | Expiry / gateway ready |
+| `container_management` | `container_management_status_web_app.cgi` | Container/execution units |
+| `wan_internet` | `wan_internet_status_web_app.cgi` | WAN IP, status, up flag |
+| `wan_config` | `wan_config_glb_status_web_app.cgi` | WAN config |
+| `wan_show` | `show_wan_status_web_app.cgi` | WAN connections |
+| `ddns` | `ddns_status_web_app.cgi` | DDNS config |
+| `sntp` | `sntp_status_web_app.cgi` | Time sync status |
+| `upnp` | `upnp_status_web_app.cgi` | UPnP config |
+| `lan_ipv4` | `lan_ipv4_status_web_app.cgi` | LAN/DHCP IPv4 config |
+| `lan_ipv6` | `lan_ipv6_status_web_app.cgi` | LAN IPv6 config |
+| `lan_status` | `lan_status_web_app.cgi` | LAN status |
+| `domain_route` | `domain_route_status_web_app.cgi` | DNS prefix/suffix |
+| `wlan_config` | `wlan_config_status_web_app.cgi` | WiFi config |
+| `wlan_guest` | `wlan_config_guest_status_web_app.cgi` | Guest WiFi config |
+| `mesh` | `mesh_status_web_app.cgi` | Mesh/beacon detail |
+| `beacon_mode` | `whw_beacon_mode_app_status_web_app.cgi` | Beacon work mode |
+| `macfilter` | `macfilter_status_web_app.cgi` | MAC filter config |
+| `ipfilter` | `ipfilter_status_web_app.cgi` | IP filter config |
+| `firewall` | `firewall_status_web_app.cgi` | Firewall config |
+| `parental_control` | `parental_ctrl_status_web_app.cgi` | Parental control |
+| `device_name` | `device_name_status_web_app.cgi` | Device config |
+| `password` | `password_status_web_app.cgi` | Login config |
+| `ledctrl` | `ledctrl_status_web_app.cgi` | LED control status |
+| `web_customization` | `web_customization_web_app.cgi` | Logo/color customization |
+| `statistics` | `statistics_status_web_app.cgi` | LAN traffic counters |
+| `diag` | `diag_status_web_app.cgi` | LAN ethernet status |
+| `qos` | `qos_status_web_app.cgi` | QoS config |
+| `nat` | `nat_glb_status_web_app.cgi` | NAT config |
+| `log` | `log_status_web_app.cgi` | Syslog config |
+| `log_info` | `log_status_web_app.cgi?info` | Syslog config detail |
+| `log_vlog` | `log_status_web_app.cgi?vlog_glb` | **Full syslog buffer** (142KB) |
+
+### Disabled / destructive endpoints (commented out)
+
+These are **state-changing or destructive** and are intentionally **disabled**
+in `ENDPOINTS`. They are documented here for reference but **must not be called**
+without explicit need — several will reboot, factory-reset, or reconfigure the
+router.
+
+| Friendly name | CGI endpoint | Risk |
+|---|---|---|
+| `reboot` | `reboot_web_app.cgi` | **Reboots the router** |
+| `restore` | `restore_web_app.cgi?restore_glb` | **Restores config** |
+| `restore_factory` | `restore_web_app.cgi?deep_factory` | **Factory reset** |
+| `upgrade` | `upgrade_web_app.cgi` | **Firmware upgrade** |
+| `command_cat` | `command_web_app.cgi?cat` | Shell file-read (dead on this firmware) |
+| `command_pexist` | `command_web_app.cgi?pexist` | Shell command-exists (dead) |
+| `diag_ping` / `diag_cancel` | `diag_web_app.cgi?ping` / `?cancel` | Runs/cancels diagnostics |
+| `troubleshoot_ping` | `troubleshooting_web_app.cgi?ping` | Runs ping |
+| `troubleshoot_latency` | `troubleshooting_web_app.cgi?latencytest` | Runs latency test |
+| `troubleshoot_dns` | `troubleshooting_web_app.cgi?dnsrestest` | Runs DNS test |
+| `troubleshoot_us/ds_throughput` | `troubleshooting_web_app.cgi?usthroughputtest` / `?dsthroughputtest` | Runs throughput test |
+| `troubleshoot_us/ds_packetloss` | `troubleshooting_web_app.cgi?uspacketloss` / `?dspacketloss` | Runs packet-loss test |
+| `troubleshoot_port_mirror` | `troubleshooting_web_app.cgi?v=port_mirror` | Enables port mirror |
+| `troubleshoot_del_port_mirror` | `troubleshooting_web_app.cgi?v=del_portmirror` | Disables port mirror |
+| `password_set` | `password_web_app.cgi?set` | **Changes admin password** |
+| `device_name_add` / `del` | `device_name_web_app.cgi?add` / `?act=del` | Adds/removes device name |
+| `lan_ipv4_config` / `bindmac` / `del` | `lan_ipv4_web_app.cgi?config` / `?bindmac` / `?act=del` | LAN/DHCP changes |
+| `wlan_config_glb` / `glb11ac` | `wlan_config_web_app.cgi?do_config_glb` / `?do_config_glb11ac` | **WiFi config changes** |
+| `wlan_guest_config` | `wlan_config_guest_web_app.cgi?ConfigWhwGuest` | Guest WiFi changes |
+| `wlan_wps_*` | `wlan_config_web_app.cgi?wps_status` / `?pin_get` / `?pbc` / `?sta_pin` / `?ap_pin` | WPS operations |
+| `mesh_add` / `del` / `set` | `mesh_web_app.cgi?add` / `?del` / `?v_glb=set` | Mesh changes |
+| `qos_add` / `del_gfast` | `qos_web_app.cgi?v=add` / `?v=del_gfast` | QoS changes |
+| `nat_add/del_vhost` / `thost` | `nat_glb_web_app.cgi?v=add_vhost` / `?v=del_vhost` / `?v=add_thost` / `?v=del_thost` | NAT port-forward changes |
+| `nat_cfg_alg` / `dmz` | `nat_glb_web_app.cgi?v=cfg_alg` / `?v=cfg_dmz` | NAT ALG/DMZ changes |
+| `ddns_add` | `ddns_web_app.cgi?add_glb` | DDNS changes |
+| `upnp_config` | `upnp_web_app.cgi?config_glb` | UPnP changes |
+| `firewall_set` / `level` | `firewall_web_app.cgi?fire` / `?level_name` | Firewall changes |
+| `macfilter_add/del` | `macfilter_web_app.cgi?add_ethernet` / `?act=del_ethernet` / `?add_wlan` / `?act=del_wlan` | MAC filter changes |
+| `ipfilter_set` / `add` / `del` | `ipfilter_web_app.cgi?v_glb=set` / `?add_glb` / `?v_glb=delip` | IP filter changes |
+| `parental_control_set` | `parental_ctrl_web_app.cgi` | Parental control changes |
+| `ledctrl_set` | `ledctrl_web_app.cgi?SetLedGlb` | LED changes |
+| `log_set` | `log_web_app.cgi?set_log_glb` | Log config changes |
+| `domain_route_add/del/enable` | `domain_route_web_app.cgi?add_domainRouteData` / `?act=del` / `?enable` | DNS route changes |
+| `lan_add_client_alias` / `del` / `del_dom` | `lan_status_web_app.cgi?add_client_alias` / `?del` / `?delDom` | LAN client changes |
+| `wan_config_b` | `wan_config_glb_b_web_app.cgi?config` | WAN config changes |
+| `device_status_rootalias` / `getroot` | `device_status_web_app.cgi?rootalias` / `?getroot` | Device root access |
+| `beacon_mode_set` | `whw_beacon_mode_app_web_app.cgi` | Beacon mode changes |
 
 ## How the handshake works
 
@@ -80,3 +187,7 @@ The `base64url_escape` is a pure character substitution (`+`→`-`, `/`→`_`,
 - The `command_web_app.cgi` shell primitives (`pexist`/`cat`) authenticate but
   return empty bodies on this firmware — the data endpoints are the reliable
   surface.
+- The router runs **Linux** (self-reported `execution-env: "Linux OS"`, uses
+  Linux `crypt()` SHA-256, served by `thttpd`).
+- The SPA is served from `/web_whw/` — the JS bundle there is the authoritative
+  source of the CGI endpoint list.
