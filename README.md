@@ -152,6 +152,39 @@ change configuration. Results are read back via `diag` / `troubleshoot_status`.
 | `troubleshoot_us_packetloss` | `troubleshooting_web_app.cgi?uspacketloss` | Run an upstream packet-loss test |
 | `troubleshoot_ds_packetloss` | `troubleshooting_web_app.cgi?dspacketloss` | Run a downstream packet-loss test |
 
+### Process status / readout endpoint (`command_web_app.cgi`)
+
+`command_web_app.cgi` is **not** a shell backdoor and **not** dead code. It is a
+**process-status and output-readout** mechanism used by the router's own UI to
+poll long-running operations (firmware upgrade, ping/traceroute diagnostics).
+The argument is a **numeric process ID** (returned by the operation that started
+the process), not a shell command or file path.
+
+| Friendly name | CGI endpoint | Action |
+|---|---|---|
+| `command_pexist` | `command_web_app.cgi?pexist+<pid>` | Check if a process is running |
+| `command_cat` | `command_web_app.cgi?cat+<pid>.cmd` | Read a process's output |
+
+**How to use it:**
+
+1. Start a long-running operation (e.g. a ping diagnostic via
+   `diag_web_app.cgi?ping`). The response includes a `pid`.
+2. Poll `command_web_app.cgi?pexist+<pid>` to check if it's still running:
+   ```json
+   {"exist":1}   // running
+   {"exist":0}   // not running / finished
+   ```
+3. Read the process output via `command_web_app.cgi?cat+<pid>.cmd` (text
+   response) to stream the results.
+
+**Verified live:** `pexist+1` → `{"exist":1}` (PID 1, the init process, exists);
+`pexist+100` → `{"exist":0}`. Passing a non-numeric argument (e.g. `pexist+ls`)
+returns `Invalid pexist parameter` — confirming the argument must be a PID.
+
+The request format (from the de-minified JS bundle, chunk 733):
+- `pexist` uses `POST_CSRF` (body `csrf_token=<token>`)
+- `cat` uses `POST_CSRF_TEXT` (body `csrf_token=<token>`, text response)
+
 ### Disabled / destructive endpoints (commented out)
 
 These are **state-changing or destructive** and are intentionally **disabled**
@@ -165,8 +198,6 @@ router.
 | `restore` | `restore_web_app.cgi?restore_glb` | **Restores config** |
 | `restore_factory` | `restore_web_app.cgi?deep_factory` | **Factory reset** |
 | `upgrade` | `upgrade_web_app.cgi` | **Firmware upgrade** |
-| `command_cat` | `command_web_app.cgi?cat` | Shell file-read (dead on this firmware) |
-| `command_pexist` | `command_web_app.cgi?pexist` | Shell command-exists (dead) |
 | `troubleshoot_port_mirror` | `troubleshooting_web_app.cgi?v=port_mirror` | Enables port mirror |
 | `troubleshoot_del_port_mirror` | `troubleshooting_web_app.cgi?v=del_portmirror` | Disables port mirror |
 | `password_set` | `password_web_app.cgi?set` | **Changes admin password** |
@@ -209,9 +240,6 @@ The `base64url_escape` is a pure character substitution (`+`→`-`, `/`→`_`,
 
 - The router's cert is self-signed — the client disables TLS verification.
 - Only port 443 is open (no SSH/telnet/SNMP/TR-069).
-- The `command_web_app.cgi` shell primitives (`pexist`/`cat`) authenticate but
-  return empty bodies on this firmware — the data endpoints are the reliable
-  surface.
 - The router runs **Linux** (self-reported `execution-env: "Linux OS"`, uses
   Linux `crypt()` SHA-256, served by `thttpd`).
 - The SPA is served from `/web_whw/` — the JS bundle there is the authoritative
