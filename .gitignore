@@ -28,6 +28,9 @@ dist/
 build/
 target/
 
+# Downloaded JS chunks (reference material, not tracked)
+webapp-js/chunks/
+
 # Coverage
 .coverage
 coverage/

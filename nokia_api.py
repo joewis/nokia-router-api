@@ -106,6 +106,23 @@ ENDPOINTS = {
     "log_vlog": "log_status_web_app.cgi?vlog_glb",
     "log_set": "log_web_app.cgi?set_log_glb",
 
+    # --- Additional read-only endpoints (verified live 2026-09-09) ---
+    "current_time": "command_no_refresh_web_app.cgi?gettime",
+    "access_control": "access_control_status_web_app.cgi",
+    "dns_config": "dns_status_web_app.cgi",
+    "game_mode": "game_web_app.cgi?getgamemode",
+    "radio_receiver": "radio_receiver_status_web_app.cgi",
+    "route": "route_status_web_app.cgi",
+    "urlfilter": "urlfilter_status_web_app.cgi",
+    "us_classifier": "us_classifier_status_web_app.cgi",
+    "wan_dhcp": "wan_dhcp_status_web_app.cgi",
+    "wifi_schedule": "wifi_schedule_status_web_app.cgi",
+    "websoc_session": "websoc_session_web_app.cgi",
+    "tr69": "tr69_status_web_app.cgi",
+    "tr369": "tr369_status_web_app.cgi",
+    "speed_test": "speed_test_status_web_app.cgi",
+    "speed_test_tr143": "speed_test_tr143_status_web_app.cgi?v=diagnostic_status",
+
     # --- Destructive / state-changing endpoints (DO NOT enable without explicit need) ---
     # "reboot": "reboot_web_app.cgi",
     # "restore": "restore_web_app.cgi?restore_glb",

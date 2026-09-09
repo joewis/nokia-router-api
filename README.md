@@ -133,6 +133,33 @@ names map to the actual CGI script names. **Read-only** endpoints are active;
 | `log_info` | `log_status_web_app.cgi?info` | Syslog config detail |
 | `log_vlog` | `log_status_web_app.cgi?vlog_glb` | **Full syslog buffer** (142KB) |
 | `log_set` | `log_web_app.cgi?set_log_glb` | Set syslog capture/display level |
+| `current_time` | `command_no_refresh_web_app.cgi?gettime` | Router clock (`{ret, msg}`) |
+| `access_control` | `access_control_status_web_app.cgi` | Access control / trusted network |
+| `dns_config` | `dns_status_web_app.cgi` | DNS config |
+| `game_mode` | `game_web_app.cgi?getgamemode` | Game mode status |
+| `radio_receiver` | `radio_receiver_status_web_app.cgi` | Radio receiver status |
+| `route` | `route_status_web_app.cgi` | IP route table |
+| `urlfilter` | `urlfilter_status_web_app.cgi` | URL filter config |
+| `us_classifier` | `us_classifier_status_web_app.cgi` | Upstream classifier |
+| `wan_dhcp` | `wan_dhcp_status_web_app.cgi` | WAN DHCP config |
+| `wifi_schedule` | `wifi_schedule_status_web_app.cgi` | WiFi schedule |
+| `websoc_session` | `websoc_session_web_app.cgi` | WebSocket session |
+| `tr69` | `tr69_status_web_app.cgi` | TR-069 config |
+| `tr369` | `tr369_status_web_app.cgi` | TR-369 (USP) config |
+| `speed_test` | `speed_test_status_web_app.cgi` | Speed test status |
+| `speed_test_tr143` | `speed_test_tr143_status_web_app.cgi?v=diagnostic_status` | TR-143 speed test status |
+
+> **Note on the additional endpoints (2026-09-09):** these were discovered in the
+> full 246-entry endpoint map extracted from the router's JS bundle. They return
+> HTTP 200 but **empty bodies** on this Beacon 2 (they are stubs or require
+> specific parameters not exposed by the UI). Only `current_time` returns real
+> data. A few (`dns_config`, `log_status_web_app.cgi` without `?info`) **abort the
+> connection** (the router closes the socket) — a firmware quirk. They are wired
+> in for completeness and future use, but most will return `{}` or empty until
+> the router firmware exposes them. The following endpoints from the map are
+> **404 on this device** (FWA/cellular variants, not present on the Beacon 2):
+> `gre_tunnel`, `ipsec`, `pon_status`, `sta_info`, `uplink_management`,
+> `voice_info`, `voice_setting`, `xlink`, `prelogin`.
 
 ### Diagnostic endpoints (active)
 
